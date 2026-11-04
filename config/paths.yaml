@@ -1,0 +1,20 @@
+# SmartPhish Paths
+
+root: "."
+data:
+  raw: "data/raw"
+  interim: "data/interim"
+  processed: "data/processed"
+models:
+  dir: "models"
+  preprocessor: "models/preprocessor.joblib"
+  feature_list: "models/feature_list.json"
+  metrics: "models/metrics.json"
+  registry: "models/model_registry.json"
+reports:
+  figures: "reports/figures"
+  metrics: "reports/metrics"
+logs:
+  dir: "logs"
+app:
+  assets: "app/assets"

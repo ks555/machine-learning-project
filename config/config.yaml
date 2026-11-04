@@ -1,0 +1,118 @@
+# SmartPhish Configuration
+
+project:
+  name: SmartPhish
+  version: "1.0.0"
+  seed: 42
+  mode: research  # research | production
+
+data:
+  url_col: url
+  label_col: label
+  label_map:
+    phishing: 1
+    malicious: 1
+    bad: 1
+    legit: 0
+    legitimate: 0
+    benign: 0
+    good: 0
+  test_size: 0.2
+  val_size: 0.1
+  stratify: true
+
+features:
+  extract_lexical: true
+  extract_host: false  # requires network/DNS - disabled by default for reproducibility
+  extract_content: false  # requires fetching pages - disabled by default
+  max_features: null
+  selection:
+    method: mutual_info  # none | correlation | mutual_info | l1
+    k: 30
+
+preprocessing:
+  impute: median
+  scale: standard  # none | standard | minmax | robust
+  handle_imbalance: class_weight  # none | class_weight | smote | adasyn
+  drop_constant: true
+  drop_correlated: true
+  corr_threshold: 0.95
+
+models:
+  enabled:
+    - logistic_regression
+    - decision_tree
+    - random_forest
+    - gradient_boosting
+    - voting_ensemble
+    - stacking_ensemble
+  logistic_regression:
+    solver: liblinear
+    max_iter: 1000
+    class_weight: balanced
+  decision_tree:
+    max_depth: 10
+    min_samples_split: 5
+    class_weight: balanced
+  random_forest:
+    n_estimators: 200
+    max_depth: 15
+    min_samples_split: 5
+    class_weight: balanced
+    n_jobs: -1
+  svm:
+    kernel: rbf
+    C: 1.0
+    probability: true
+    class_weight: balanced
+  gradient_boosting:
+    n_estimators: 200
+    learning_rate: 0.1
+    max_depth: 5
+  voting_ensemble:
+    voting: soft
+    weights: null
+  stacking_ensemble:
+    cv: 5
+    final_estimator: logistic_regression
+
+training:
+  cv_folds: 5
+  scoring: roc_auc
+  n_jobs: -1
+  tune: false
+  tuning_method: random  # grid | random | bayes
+  n_iter: 20
+
+xai:
+  enabled: true
+  method: shap  # shap | lime | both
+  sample_size: 100
+  plot:
+    summary: true
+    waterfall: true
+    force: false
+    dependence: false
+
+risk_assessment:
+  method: probability_mapping  # probability_mapping | rule_based | hybrid
+  thresholds:
+    low: 0.2
+    medium: 0.4
+    high: 0.7
+    critical: 0.9
+  score_weights:
+    model_prob: 0.7
+    heuristics: 0.3
+  bands:
+    - {name: "Low", min: 0, max: 25, color: "#2ecc71", action: "Generally appears low risk. Still exercise caution with unknown links."}
+    - {name: "Medium", min: 25, max: 50, color: "#f1c40f", action: "Some suspicious indicators. Avoid entering credentials/payment info."}
+    - {name: "High", min: 50, max: 75, color: "#e67e22", action: "Multiple phishing indicators. Do not log in or download files. Verify through official channels."}
+    - {name: "Critical", min: 75, max: 100, color: "#e74c3c", action: "Strong phishing indicators. Avoid entirely. Report if it impersonates a known entity."}
+
+monitoring:
+  reference_path: models/reference_distribution.parquet
+  psi_threshold: 0.1  # >0.1 moderate, >0.25 significant
+  ks_threshold: 0.05
+  alert_on_drift: true
+  store_predictions: true
